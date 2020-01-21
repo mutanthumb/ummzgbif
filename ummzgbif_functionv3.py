@@ -26,11 +26,12 @@ import datetime
 import glob
 import fnmatch
 import re
-from pygbif import occurrences as occ
+#from pygbif import occurrences as occ
 import shutil
 from pandas import read_excel
 import json
 import requests
+import csv
 
 
 now = datetime.datetime.now()
@@ -52,21 +53,6 @@ def parsefolder(fn):
         print("Incorrect folder name! %s" %fn)
         return
 
-def morphosourcemd(up, fn):
-    my_sheet = 'Sheet1'
-    file_name = '%s/MorphoSourceBatchImportWorksheet.xlsx' % (up)# name of your excel file
-    df = read_excel(file_name, skiprows = 1, sheet_name = my_sheet)
-    msfields = df.loc[df['MorphoSource Field'].str.contains(fn)]
-    #print(df.head()) # shows headers with top 5 rows
-    jstr = msfields.to_json()
-    #pprint.pprint(jstr)
-    msdf = '%s/%s/MorphoSourceFields.json' % (up, fn)
-    msdatafile = open(msdf, "w") # Create in proper sub-folders
-    msdatafile.write(json.dumps(json.loads(jstr), indent = 4, sort_keys=True))
-    msdatafile.close()
-    return
-
-
 def getgbif(ic, cc, cn):
     """
     Using the GBIF library, fetch UMMZ records
@@ -77,6 +63,7 @@ def getgbif(ic, cc, cn):
     #url = gbif_baseurl + 'occurrence/search?' + 'catalog_number=' + cn + '&collection_code=' + cc + '&institution_code=' + ic
     #print(url)
     results = requests.get(gbif_baseurl + 'occurrence/search?' + 'catalog_number=' + cn + '&collection_code=' + cc + '&institution_code=' + ic)
+    #https://api.gbif.org/v1/occurrence/search?catalog_number=124092&collection_code=mammals&institution_code=ummz
     key_list = json.loads(results.content.decode())
     #print(data)
     #print("line 80: %s " % key_list['results'])
@@ -117,42 +104,50 @@ def getmediagroup(up, fn, ic, cc, cn, uid):
     mgName = [dI for dI in os.listdir(mgpath) if os.path.isdir(os.path.join(mgpath, dI))]
 
     for folders in mgName:
-        mgfolder = os.path.join(mgpath, folders)
-        #print("mgfolder= %s" % mgfolder)
-        zfolders = "%s" % folders
-        try:
-            # Modify zip name to include Darwin core triple and GBIF occurrence ID
-            # shutil.make_archive(name_of_zip, 'zip', folder_to_be_zipped) mgfolder + ic + "-" + cc + "-" + cn + "-" + uid
-            zfiles = shutil.make_archive(mgfolder + "-" + str(uid), 'zip', mgfolder)
-        except OSError:
-            pass
-        zfilesplit = zfiles.split('/') # for Mac/Linux
-        #zfilesplit = zfiles.split('\\') # for Windows
-        zsplit = zfilesplit[len(zfilesplit)-1]
-        uf = uf + ("      - %s\n" % (zsplit))
-        filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s/%s\n" % (up, fn, zsplit))
+        #print(type(folders))
+        if folders.startswith(("Raw", "Recon")):
 
-        #Get tifs and ply files for previews
-        plyfile = [f for f in os.listdir(mgfolder) if f.endswith('.ply')]
-        if len(plyfile) != 0:
-            uf = uf + ("      - %s\n" % (plyfile[0]))
-            filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, plyfile[0]))
-        if "Skull" in folders:
-            img_files = [f for f in os.listdir(mgfolder) if f.endswith('.tif')]
-            uf = uf + ("      - %s\n" % (img_files[0]))
-            filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[0]))
-        if "WholeBody" in folders:
-            img_files = [f for f in os.listdir(mgfolder) if f.endswith('.tif')]
-            fbimg = int(len(img_files)/2)
-            uf = uf + ("      - %s\n" % (img_files[fbimg]))
-            filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[fbimg]))
+            mgfolder = os.path.join(mgpath, folders)
+            #print("mgfolder= %s" % mgfolder)
+            zfolders = "%s" % folders
+            try:
+                # Modify zip name to include Darwin core triple and GBIF occurrence ID
+                # shutil.make_archive(name_of_zip, 'zip', folder_to_be_zipped) mgfolder + ic + "-" + cc + "-" + cn + "-" + uid
+                zfiles = shutil.make_archive(mgfolder + "-" + str(uid), 'zip', mgfolder)
+            except OSError:
+                pass
+            zfilesplit = zfiles.split('/') # for Mac/Linux
+            #zfilesplit = zfiles.split('\\') # for Windows
+            zsplit = zfilesplit[len(zfilesplit)-1]
+            uf = uf + ("      - %s\n" % (zsplit))
+            filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s/%s\n" % (up, fn, zsplit))
+
+            #Get tifs and ply files for previews
+            plyfile = [f for f in os.listdir(mgfolder) if f.endswith('.ply')]
+            if len(plyfile) != 0:
+                uf = uf + ("      - %s\n" % (plyfile[0]))
+                filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, plyfile[0]))
+            if "Skull" in folders:
+                img_files = [f for f in os.listdir(mgfolder) if f.endswith('.tif')]
+                uf = uf + ("      - %s\n" % (img_files[0]))
+                filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[0]))
+            if "WholeBody" in folders:
+                img_files = [f for f in os.listdir(mgfolder) if f.endswith('.tif')]
+                fbimg = int(len(img_files)/2)
+                uf = uf + ("      - %s\n" % (img_files[fbimg]))
+                filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[fbimg]))
 
     return mgName, uf, filepath
 
 
 def xtekdata(mgName):
     mgdesc = list()
+    msMetadata = list()
     for mgroup in mgName:
+        #print(mgroup)
+        mdDict = dict()
+        #msMetadata['mdDict']['name'] = mgroup
+        #mdDict['part'] = mgroup
         if mgroup == 'surface_model':
             continue
         else:
@@ -160,15 +155,17 @@ def xtekdata(mgName):
             xtekpath = os.listdir(xpath)
             #print('mgfolder= %s' % (mgroup))
             if "WholeBody" in mgroup:
-                roiName = "WholeBody"
+                mdDict['part'] = "WholeBody"
             else:
-                roiName = "Skull"
+                mdDict['part'] = "Skull"
+
+            #mdDict['part'] = roiName
             #xteckVol = 1
             #if line.startswith("InputFolderName"):
             match = re.search(r'\b\d{4}-\d\d?-\d\d?\b', fname)
             ummzdict['scandate'] = datetime.datetime.strptime(match.group(), '%Y-%m-%d').date()
                  #print(filedate)
-
+            mdDict['scandate'] = ummzdict['scandate']
             #shortMGroup = re.sub(r'-\b\d{4}-\d\d?-\d\d?\b', '', mgroup)
             for xtek in xtekpath:
                 #xteckVol = 1
@@ -180,31 +177,45 @@ def xtekdata(mgName):
                     for line in xtekfile:
 
                         if re.match("VoxelSizeX=", line):
-                             voxres = re.split('=', line)[-1]
+                             voxRes = re.split('=', line)[-1]
                              #print(voxres)
                         if re.match("VoxelsX=", line):
                              voxX = re.split('=', line)[-1]
+                             mdDict['x_spacing'] = voxX.rstrip('\r\n')
                              #print(voxX)
                         if re.match("VoxelsY=", line):
                              voxY = re.split('=', line)[-1]
+                             mdDict['y_spacing'] = voxY.rstrip('\r\n')
                              #print(voxY)
                         if re.match("VoxelsZ=", line):
                              voxZ = re.split('=', line)[-1]
+                             mdDict['z_spacing'] = voxZ.rstrip('\r\n')
                              #print(voxZ)
-
                         if re.match("Projections=", line):
                              proj = re.split('=', line)[-1]
                              #print(proj)
-
+                    '''
                     if "Recon" in mgroup:
                         numtif = voxZ.rstrip('\r\n')
                         dataType = "Reconstructed -"
                     if "Raw" in mgroup:
                         numtif = proj.rstrip('\r\n')
                         dataType = "Raw -"
+                    '''
+
+                    if "Recon" in mgroup:
+                        numtif = mdDict['z_spacing'].rstrip('\r\n')
+                        mdDict["media_ct_number_of_images_in_set"] = mdDict['z_spacing'].rstrip('\r\n')
+                        mdDict["processing_activity_type"] = "Reconstructed"
+                        mdDict["media_ct_series_type"] = "Reconstructed Image Stack"
+                    if "Raw" in mgroup:
+                        numtif = proj.rstrip('\r\n')
+                        mdDict["number_of_images_in_set"] = proj.rstrip('\r\n')
+                        mdDict["processing_activity_type"] = "Raw -"
+                        mdDict["media_ct_series_type"] = "Projections"
 
                     #ydesc = ("    :description:\n      - 'Scan of specimen %s:%s:%s (%s) - %s . Dataset includes %s TIF images (each %s x %s x 1 voxel at %s mm resolution, derived from %s scan projections), xtek and vgi files for volume reconstruction.'\n" % (ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['sciName'], shortMGroup, numtif, voxX.rstrip('\r\n'), voxY.rstrip('\r\n'), voxres.rstrip('\r\n'), proj.rstrip('\r\n'))) #from xtek
-                    ydesc = ("Scan of specimen %s:%s:%s (%s) - %s. %s Dataset includes %s TIF images (each %s x %s x 1 voxel at %s mm resolution, derived from %s scan projections), xtek and vgi files for volume reconstruction." % (ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['sciName'], roiName, dataType, numtif, voxX.rstrip('\r\n'), voxY.rstrip('\r\n'), voxres.rstrip('\r\n'), proj.rstrip('\r\n'))) #from xtek
+                    ydesc = ("Scan of specimen %s:%s:%s (%s) - %s. %s Dataset includes %s TIF images (each %s x %s x 1 voxel at %s mm resolution, derived from %s scan projections), xtek and vgi files for volume reconstruction." % (ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['sciName'], mdDict['part'], mdDict["processing_activity_type"], numtif, mdDict['x_spacing'], mdDict['y_spacing'], voxRes.rstrip('\r\n'), proj.rstrip('\r\n'))) #from xtek
                     #print(ydesc)
                     mgdesc.append(ydesc)
                     break
@@ -214,8 +225,45 @@ def xtekdata(mgName):
                     #continue
             #if xteckVol == 0:
                 #print("No *.xtekVolume file found in %s!" % xpath)
+        print(mdDict)
+        msMetadata.append(mdDict)
     ummzdict['desc'] =  mgdesc
-    return ummzdict['desc'], roiName
+    return ummzdict['desc'], msMetadata
+
+'''
+def morphosourcemd(fname, uf, filepath, gbifl1, msMetadata):
+    #msMetadata = dict()
+    msMetadata['occurrence_id'] = "urn:catalog:" + ummzdict['ic'] + ":" + ummzdict['cc'] + ":" + ummzdict['cn']
+    msMetadata["institution_code"] = ummzdict['ic']
+    msMetadata["collection_code"] = ummzdict['cc']
+    msMetadata["catalog_number"] = ummzdict['cn']
+    msMetadata["device_model"] = "XT H225ST"
+    msMetadata["device_manufacturer"] = "Nikon"
+    msMetadata["device_modality"] = "Micro/Nano X-Ray Computed Tomography"
+    msMetadata["device_description"] = ""
+    msMetadata["device_organization_name"] = "University of Michigan Museum of Zoology"
+    msMetadata["x_spacing"] = voxX
+    msMetadata["y_spacing"] = voxY
+    msMetadata["z_spacing"] = voxZ
+    msMetadata["unit"] = "mm"
+    if "Recon" in mgroup:
+        msMetadata["media_ct_number_of_images_in_set"] = voxZ.rstrip('\r\n')
+        msMetadata["processing_activity_type"] = "Reconstructed"
+        msMetadata["media_ct_series_type"] = "Reconstructed Image Stack"
+    if "Raw" in mgroup:
+        msMetadata["number_of_images_in_set"] = proj.rstrip('\r\n')
+        dataType = "Raw -"
+        msMetadata["media_ct_series_type"] = "Projections"
+    msMetadata["creator"] = "?"
+    if "WholeBody" in mgroup:
+        msMetadata["part"] = "WholeBody"
+    else:
+        msMetadata["part"] = "Skull"
+    msMetadata["license"] = "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+
+
+    return msMetadata
+
 
 def createyml(fname, uf, filepath, gbifl1, roiName):
 
@@ -271,6 +319,7 @@ def createyml(fname, uf, filepath, gbifl1, roiName):
     f.write(yfiles)
     f.close()
     return
+'''
 
 ### Start here!!
 #ummzpath = input("UMMZ folder path: ")
@@ -279,23 +328,37 @@ ummzpath = argv[1] #For example UMMZ-02-22-219
 #get folder name from the system to parse into query fields
 folderName = [dI for dI in os.listdir(ummzpath) if os.path.isdir(os.path.join(ummzpath,dI))]
 #error handling for folder names (ex: not including catalognumber)
-for fname in folderName:
-    #print(fname)
-    ummzdict = dict()
-    gbiflist = parsefolder(fname)
-    if gbiflist == None:
-        continue
-    else:
-        # Get data from GBIF
-        #morphosourcemd(ummzpath, fname)
-        ummzdict['ic'] = gbiflist[0]
-        ummzdict['cc'] = gbiflist[1]
-        ummzdict['cn'] = gbiflist[2]
-        print(ummzdict['ic'], ummzdict['cc'], ummzdict['cn'])
-        getgbif(ummzdict['ic'], ummzdict['cc'], ummzdict['cn'])
-        #print(ummzdict)
-        if ummzdict['ic'] == "error":
+msMetadata = dict()
+msFilePath = ummzpath + '/' + "DBD_file_manifest.csv"
+with open(msFilePath, mode='w', encoding='utf8', newline='') as csv_file:
+    fieldnames = ["file_name", "ms_id", "media_type", "ingestable", "parent_file_name", "parent_ms_id", "parent_identifier", "occurrence_id", "institution_code", "collection_code", "catalog_number", "scandate", "device_model", "device_manufacturer", "device_modality", "device_description", "device_organization_name", "x_spacing", "y_spacing", "z_spacing",  "unit", "number_of_images_in_set", "processing_activity_type", "creator", "part", "license", "media_ct_series_type", "media_ct_number_of_images_in_set"]
+    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    writer.writeheader()
+    for fname in folderName:
+        #print(fname)
+        ummzdict = dict()
+
+        gbiflist = parsefolder(fname)
+        if gbiflist == None:
             continue
-        mgName, uf, filepath = getmediagroup(ummzpath, fname, ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['yuuid']) # Get media groups zip media group folders
-        desc, roiName = xtekdata(mgName) # Get values from xtekVolume
-        createyml(fname, uf, filepath, gbiflist[1], roiName)
+        else:
+            # Get data from GBIF
+            #morphosourcemd(ummzpath, fname)
+            ummzdict['ic'] = gbiflist[0]
+            ummzdict['cc'] = gbiflist[1]
+            ummzdict['cn'] = gbiflist[2]
+            #print(ummzdict['ic'], ummzdict['cc'], ummzdict['cn'])
+            getgbif(ummzdict['ic'], ummzdict['cc'], ummzdict['cn'])
+            #print(ummzdict)
+            if ummzdict['ic'] == "error":
+                continue
+            mgName, uf, filepath = getmediagroup(ummzpath, fname, ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['yuuid']) # Get media groups zip media group folders
+            desc, msMetadata  = xtekdata(mgName) # Get values from xtekVolume
+            #create file with MorphoSource metadata for each work
+
+            #msMetadata = morphosourcemd(fname, uf, filepath, gbiflist[1], roiName, msMetadata, voxX, voxY, voxZ, proj, mgroup)
+            writer.writerows(msMetadata)
+            #createyml(fname, uf, filepath, gbiflist[1], roiName)
+csv_file.close()
+
+            #create a file manifest for MorphoSource of all datasets in batch
