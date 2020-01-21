@@ -13,7 +13,9 @@ import pathlib
 import shutil
 from os import listdir
 from os.path import isfile, join
+import re
 from re import search
+import datetime
 from os import walk
 
 dirs = [d for d in os.listdir('UMMZ-ms') if os.path.isdir(os.path.join('UMMZ-ms', d))]
@@ -25,6 +27,10 @@ for specDir in dirs:
     #print(dir)
     umztripledir = specDir.split(' ')[0]
     scandate = specDir.split(' ')[1]
+    match = re.search(r'\b\d{4}-\d\d?-\d\d?\b', scandate)
+    newdate = datetime.datetime.strptime(match.group(), '%Y-%m-%d').date()
+    print(newdate)
+    newSpecDir = umztripledir + "-" + str(newdate)
 
     #print(umztripledir)
     if "skull" in specDir:
@@ -56,3 +62,4 @@ for specDir in dirs:
                 os.rename('UMMZ-ms/' + specDir + '/' + dirs, reconTargetDir)
             else:
                 shutil.move(roiDir + '/' + dirs, rawTarDir)
+    os.rename('UMMZ-ms/' + specDir, 'UMMZ-ms/' + newSpecDir)
