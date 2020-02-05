@@ -202,6 +202,19 @@ def xtekdata(mgName):
                         numtif = proj.rstrip('\r\n')
                         dataType = "Raw -"
                     '''
+                    mdDict['occurrence_id'] = "urn:catalog:" + ummzdict['ic'] + ":" + ummzdict['cc'] + ":" + ummzdict['cn']
+                    mdDict["institution_code"] = ummzdict['ic']
+                    mdDict["collection_code"] = ummzdict['cc']
+                    mdDict["catalog_number"] = ummzdict['cn']
+                    mdDict["device_model"] = "XT H225ST"
+                    mdDict["device_manufacturer"] = "Nikon"
+                    mdDict["device_modality"] = "Micro/Nano X-Ray Computed Tomography"
+                    mdDict["device_description"] = ""
+                    mdDict["device_organization_name"] = "University of Michigan Museum of Zoology"
+                    #mdDict["x_spacing"] = voxX
+                    #mdDict["y_spacing"] = voxY
+                    #mdDict["z_spacing"] = voxZ
+                    mdDict["unit"] = "mm"
 
                     if "Recon" in mgroup:
                         numtif = mdDict['z_spacing'].rstrip('\r\n')
@@ -211,8 +224,16 @@ def xtekdata(mgName):
                     if "Raw" in mgroup:
                         numtif = proj.rstrip('\r\n')
                         mdDict["number_of_images_in_set"] = proj.rstrip('\r\n')
-                        mdDict["processing_activity_type"] = "Raw -"
+                        mdDict["processing_activity_type"] = "Raw"
                         mdDict["media_ct_series_type"] = "Projections"
+
+
+                    if "WholeBody" in mgroup:
+                        roiName = "WholeBody"
+                    else:
+                        roiName = "Skull"
+
+                    mdDict["license"] = "https://creativecommons.org/licenses/by-nc-sa/4.0/"
 
                     #ydesc = ("    :description:\n      - 'Scan of specimen %s:%s:%s (%s) - %s . Dataset includes %s TIF images (each %s x %s x 1 voxel at %s mm resolution, derived from %s scan projections), xtek and vgi files for volume reconstruction.'\n" % (ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['sciName'], shortMGroup, numtif, voxX.rstrip('\r\n'), voxY.rstrip('\r\n'), voxres.rstrip('\r\n'), proj.rstrip('\r\n'))) #from xtek
                     ydesc = ("Scan of specimen %s:%s:%s (%s) - %s. %s Dataset includes %s TIF images (each %s x %s x 1 voxel at %s mm resolution, derived from %s scan projections), xtek and vgi files for volume reconstruction." % (ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['sciName'], mdDict['part'], mdDict["processing_activity_type"], numtif, mdDict['x_spacing'], mdDict['y_spacing'], voxRes.rstrip('\r\n'), proj.rstrip('\r\n'))) #from xtek
@@ -225,44 +246,10 @@ def xtekdata(mgName):
                     #continue
             #if xteckVol == 0:
                 #print("No *.xtekVolume file found in %s!" % xpath)
-        print(mdDict)
+        #print(mdDict)
         msMetadata.append(mdDict)
     ummzdict['desc'] =  mgdesc
-    return ummzdict['desc'], msMetadata
-
-'''
-def morphosourcemd(fname, uf, filepath, gbifl1, msMetadata):
-    #msMetadata = dict()
-    msMetadata['occurrence_id'] = "urn:catalog:" + ummzdict['ic'] + ":" + ummzdict['cc'] + ":" + ummzdict['cn']
-    msMetadata["institution_code"] = ummzdict['ic']
-    msMetadata["collection_code"] = ummzdict['cc']
-    msMetadata["catalog_number"] = ummzdict['cn']
-    msMetadata["device_model"] = "XT H225ST"
-    msMetadata["device_manufacturer"] = "Nikon"
-    msMetadata["device_modality"] = "Micro/Nano X-Ray Computed Tomography"
-    msMetadata["device_description"] = ""
-    msMetadata["device_organization_name"] = "University of Michigan Museum of Zoology"
-    msMetadata["x_spacing"] = voxX
-    msMetadata["y_spacing"] = voxY
-    msMetadata["z_spacing"] = voxZ
-    msMetadata["unit"] = "mm"
-    if "Recon" in mgroup:
-        msMetadata["media_ct_number_of_images_in_set"] = voxZ.rstrip('\r\n')
-        msMetadata["processing_activity_type"] = "Reconstructed"
-        msMetadata["media_ct_series_type"] = "Reconstructed Image Stack"
-    if "Raw" in mgroup:
-        msMetadata["number_of_images_in_set"] = proj.rstrip('\r\n')
-        dataType = "Raw -"
-        msMetadata["media_ct_series_type"] = "Projections"
-    msMetadata["creator"] = "?"
-    if "WholeBody" in mgroup:
-        msMetadata["part"] = "WholeBody"
-    else:
-        msMetadata["part"] = "Skull"
-    msMetadata["license"] = "https://creativecommons.org/licenses/by-nc-sa/4.0/"
-
-
-    return msMetadata
+    return ummzdict['desc'], msMetadata, roiName
 
 
 def createyml(fname, uf, filepath, gbifl1, roiName):
@@ -270,7 +257,7 @@ def createyml(fname, uf, filepath, gbifl1, roiName):
     emailDict = {"birds" : "ummz-birds-data@umich.edu", "fish" : "ummz-fish-data@umich.edu" , "herps" : "ummz-herp-data@umich.edu", "insects": "ummz-insects-data@umich.edu" , "mammals" : "ummz-mammals-data@umich.edu", "mollusks" : "ummz-mollusks-data@umich.edu"}
     ownauth = emailDict.get(gbifl1, "")
 
-    collDict = {"birds" : "Division of Birds", "fish" : "Division of Fishes" , "herps" : "xk81jk388", "insects": "Division of Insects" , "mammals" : "hm50tr726", "mollusks" : "Division of Mollusks"}
+    collDict = {"birds" : "Division of Birds", "fish" : "Division of Fishes" , "herps" : "05741r77z", "insects": "Division of Insects" , "mammals" : "nv935298c", "mollusks" : "Division of Mollusks"}
     collID = collDict.get(gbifl1, "")
 
     ytop = "---\n:user:\n  :visibility: open\n  :email: sborda@umich.edu\n  :ingester: 'fritx@acm.org'\n  :source: DBDv2\n  :works:\n    :depositor: sborda@umich.edu\n"
@@ -319,7 +306,7 @@ def createyml(fname, uf, filepath, gbifl1, roiName):
     f.write(yfiles)
     f.close()
     return
-'''
+
 
 ### Start here!!
 #ummzpath = input("UMMZ folder path: ")
@@ -353,12 +340,11 @@ with open(msFilePath, mode='w', encoding='utf8', newline='') as csv_file:
             if ummzdict['ic'] == "error":
                 continue
             mgName, uf, filepath = getmediagroup(ummzpath, fname, ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['yuuid']) # Get media groups zip media group folders
-            desc, msMetadata  = xtekdata(mgName) # Get values from xtekVolume
+            desc, msMetadata, roiName  = xtekdata(mgName) # Get values from xtekVolume
             #create file with MorphoSource metadata for each work
 
-            #msMetadata = morphosourcemd(fname, uf, filepath, gbiflist[1], roiName, msMetadata, voxX, voxY, voxZ, proj, mgroup)
             writer.writerows(msMetadata)
-            #createyml(fname, uf, filepath, gbiflist[1], roiName)
+            createyml(fname, uf, filepath, gbiflist[1], roiName)
 csv_file.close()
 
             #create a file manifest for MorphoSource of all datasets in batch
