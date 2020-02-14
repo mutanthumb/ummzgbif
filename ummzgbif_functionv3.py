@@ -81,6 +81,9 @@ def getgbif(ic, cc, cn):
 
     else:
         gbif_baseurl = 'https://api.gbif.org/v1/'
+
+        # need to get the GBIF Key from above to use in the Fragment URL below:
+        
         for item in key_list['results']:
                 #print(item['key'])
                 #key = print(item['key'])
