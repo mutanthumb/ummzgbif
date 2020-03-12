@@ -83,7 +83,7 @@ def getgbif(ic, cc, cn):
         gbif_baseurl = 'https://api.gbif.org/v1/'
 
         # need to get the GBIF Key from above to use in the Fragment URL below:
-        
+
         for item in key_list['results']:
                 #print(item['key'])
                 #key = print(item['key'])
@@ -123,6 +123,10 @@ def getmediagroup(up, fn, ic, cc, cn, uid):
             #zfilesplit = zfiles.split('\\') # for Windows
             zsplit = zfilesplit[len(zfilesplit)-1]
             uf = uf + ("      - %s\n" % (zsplit))
+            if "Raw" in zsplit:
+                rawZsplit = zsplit
+            if "Recon" in zsplit:
+                reconZsplit = zsplit
             filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s/%s\n" % (up, fn, zsplit))
 
             #Get tifs and ply files for previews
@@ -140,10 +144,10 @@ def getmediagroup(up, fn, ic, cc, cn, uid):
                 uf = uf + ("      - %s\n" % (img_files[fbimg]))
                 filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[fbimg]))
 
-    return mgName, uf, filepath
+    return mgName, uf, filepath, rawZsplit, reconZsplit
 
 
-def xtekdata(mgName):
+def xtekdata(mgName, rawZsplit, reconZsplit):
     mgdesc = list()
     msMetadata = list()
     for mgroup in mgName:
@@ -205,6 +209,7 @@ def xtekdata(mgName):
                         numtif = proj.rstrip('\r\n')
                         dataType = "Raw -"
                     '''
+                    mdDict['media_type'] = "CT Image Series"
                     mdDict['occurrence_id'] = "urn:catalog:" + ummzdict['ic'] + ":" + ummzdict['cc'] + ":" + ummzdict['cn']
                     mdDict["institution_code"] = ummzdict['ic']
                     mdDict["collection_code"] = ummzdict['cc']
@@ -219,16 +224,24 @@ def xtekdata(mgName):
                     #mdDict["z_spacing"] = voxZ
                     mdDict["unit"] = "mm"
 
-                    if "Recon" in mgroup:
-                        numtif = mdDict['z_spacing'].rstrip('\r\n')
-                        mdDict["media_ct_number_of_images_in_set"] = mdDict['z_spacing'].rstrip('\r\n')
-                        mdDict["processing_activity_type"] = "Reconstructed"
-                        mdDict["media_ct_series_type"] = "Reconstructed Image Stack"
                     if "Raw" in mgroup:
+                        #print("RAW Group")
                         numtif = proj.rstrip('\r\n')
                         mdDict["number_of_images_in_set"] = proj.rstrip('\r\n')
                         mdDict["processing_activity_type"] = "Raw"
                         mdDict["media_ct_series_type"] = "Projections"
+                        mdDict["file_name"] = rawZsplit
+                        # mdDict["parent_file_name"] = RAW filename is parent of Recon file
+
+
+                    if "Recon" in mgroup:
+                        #print("RECON Group")
+                        numtif = mdDict['z_spacing'].rstrip('\r\n')
+                        mdDict["media_ct_number_of_images_in_set"] = mdDict['z_spacing'].rstrip('\r\n')
+                        mdDict["processing_activity_type"] = "Reconstructed"
+                        mdDict["media_ct_series_type"] = "Reconstructed Image Stack"
+                        mdDict["file_name"] = reconZsplit
+                        mdDict["parent_file_name"] = rawZsplit
 
 
                     if "WholeBody" in mgroup:
@@ -342,8 +355,8 @@ with open(msFilePath, mode='w', encoding='utf8', newline='') as csv_file:
             #print(ummzdict)
             if ummzdict['ic'] == "error":
                 continue
-            mgName, uf, filepath = getmediagroup(ummzpath, fname, ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['yuuid']) # Get media groups zip media group folders
-            desc, msMetadata, roiName  = xtekdata(mgName) # Get values from xtekVolume
+            mgName, uf, filepath, rawZsplit, reconZsplit = getmediagroup(ummzpath, fname, ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['yuuid']) # Get media groups zip media group folders
+            desc, msMetadata, roiName  = xtekdata(mgName, rawZsplit, reconZsplit) # Get values from xtekVolume
             #create file with MorphoSource metadata for each work
 
             writer.writerows(msMetadata)
