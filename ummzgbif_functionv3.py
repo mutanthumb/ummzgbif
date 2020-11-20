@@ -81,9 +81,6 @@ def getgbif(ic, cc, cn):
 
     else:
         gbif_baseurl = 'https://api.gbif.org/v1/'
-
-        # need to get the GBIF Key from above to use in the Fragment URL below:
-
         for item in key_list['results']:
                 #print(item['key'])
                 #key = print(item['key'])
@@ -116,17 +113,14 @@ def getmediagroup(up, fn, ic, cc, cn, uid):
             try:
                 # Modify zip name to include Darwin core triple and GBIF occurrence ID
                 # shutil.make_archive(name_of_zip, 'zip', folder_to_be_zipped) mgfolder + ic + "-" + cc + "-" + cn + "-" + uid
-                zfiles = shutil.make_archive(mgfolder + "-" + str(uid), 'zip', mgfolder)
+                # zfiles = shutil.make_archive(mgfolder + "-" + str(uid), 'zip', mgfolder)
+                zfiles = shutil.make_archive(mgfolder + "-" + str(uid), 'tar', mgfolder)
             except OSError:
                 pass
-            zfilesplit = zfiles.split('/') # for Mac/Linux
-            #zfilesplit = zfiles.split('\\') # for Windows
+            #zfilesplit = zfiles.split('/') # for Mac/Linux
+            zfilesplit = zfiles.split('\\') # for Windows
             zsplit = zfilesplit[len(zfilesplit)-1]
             uf = uf + ("      - %s\n" % (zsplit))
-            if "Raw" in zsplit:
-                rawZsplit = zsplit
-            if "Recon" in zsplit:
-                reconZsplit = zsplit
             filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s/%s\n" % (up, fn, zsplit))
 
             #Get tifs and ply files for previews
@@ -144,10 +138,10 @@ def getmediagroup(up, fn, ic, cc, cn, uid):
                 uf = uf + ("      - %s\n" % (img_files[fbimg]))
                 filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[fbimg]))
 
-    return mgName, uf, filepath, rawZsplit, reconZsplit
+    return mgName, uf, filepath
 
 
-def xtekdata(mgName, rawZsplit, reconZsplit):
+def xtekdata(mgName):
     mgdesc = list()
     msMetadata = list()
     for mgroup in mgName:
@@ -209,7 +203,6 @@ def xtekdata(mgName, rawZsplit, reconZsplit):
                         numtif = proj.rstrip('\r\n')
                         dataType = "Raw -"
                     '''
-                    mdDict['media_type'] = "CT Image Series"
                     mdDict['occurrence_id'] = "urn:catalog:" + ummzdict['ic'] + ":" + ummzdict['cc'] + ":" + ummzdict['cn']
                     mdDict["institution_code"] = ummzdict['ic']
                     mdDict["collection_code"] = ummzdict['cc']
@@ -224,24 +217,16 @@ def xtekdata(mgName, rawZsplit, reconZsplit):
                     #mdDict["z_spacing"] = voxZ
                     mdDict["unit"] = "mm"
 
-                    if "Raw" in mgroup:
-                        #print("RAW Group")
-                        numtif = proj.rstrip('\r\n')
-                        mdDict["number_of_images_in_set"] = proj.rstrip('\r\n')
-                        mdDict["processing_activity_type"] = "Raw"
-                        mdDict["media_ct_series_type"] = "Projections"
-                        mdDict["file_name"] = rawZsplit
-                        # mdDict["parent_file_name"] = RAW filename is parent of Recon file
-
-
                     if "Recon" in mgroup:
-                        #print("RECON Group")
                         numtif = mdDict['z_spacing'].rstrip('\r\n')
                         mdDict["media_ct_number_of_images_in_set"] = mdDict['z_spacing'].rstrip('\r\n')
                         mdDict["processing_activity_type"] = "Reconstructed"
                         mdDict["media_ct_series_type"] = "Reconstructed Image Stack"
-                        mdDict["file_name"] = reconZsplit
-                        mdDict["parent_file_name"] = rawZsplit
+                    if "Raw" in mgroup:
+                        numtif = proj.rstrip('\r\n')
+                        mdDict["number_of_images_in_set"] = proj.rstrip('\r\n')
+                        mdDict["processing_activity_type"] = "Raw"
+                        mdDict["media_ct_series_type"] = "Projections"
 
 
                     if "WholeBody" in mgroup:
@@ -273,15 +258,15 @@ def createyml(fname, uf, filepath, gbifl1, roiName):
     emailDict = {"birds" : "ummz-birds-data@umich.edu", "fish" : "ummz-fish-data@umich.edu" , "herps" : "ummz-herp-data@umich.edu", "insects": "ummz-insects-data@umich.edu" , "mammals" : "ummz-mammals-data@umich.edu", "mollusks" : "ummz-mollusks-data@umich.edu"}
     ownauth = emailDict.get(gbifl1, "")
 
-    collDict = {"birds" : "Division of Birds", "fish" : "Division of Fishes" , "herps" : "05741r77z", "insects": "Division of Insects" , "mammals" : "nv935298c", "mollusks" : "Division of Mollusks"}
+    collDict = {"birds" : "Division of Birds", "fish" : "sj139222d" , "herps" : "05741r77z", "insects": "Division of Insects" , "mammals" : "nv935298c", "mollusks" : "Division of Mollusks"}
     collID = collDict.get(gbifl1, "")
 
-    ytop = "---\n:user:\n  :visibility: open\n  :email: sborda@umich.edu\n  :ingester: 'fritx@acm.org'\n  :source: DBDv2\n  :works:\n    :depositor: sborda@umich.edu\n"
+    ytop = ("---\n:user:\n  :visibility: restricted\n  :email: '%s'\n  :ingester: 'fritx@umich.edu'\n  :source: DBDv2\n  :mode: build\n  :works:\n    :depositor: sborda@umich.edu\n" % (ownauth))
     yownauth = ("    :owner: '%s'\n    :authoremail: '%s'\n" % (ownauth, ownauth))
     ytitle = ("    :title: \n      - 'Computed tomography voxel dataset for %s:%s:%s-%s-%s' \n" % (ummzdict['ic'], ummzdict['cc'], ummzdict['cn'],ummzdict['sciName'], roiName))
     ydate = ("    :date_uploaded:\n      - '%s'\n" % (now.year))
     yrefby = ("    :referenced_by:\n      - 'For more information on the original UMMZ specimen, see: https://www.gbif.org/occurrence/%s'\n" % (ummzdict['yuuid'])) #build URL from iDigBio uuid\n      - ''\n"
-    ymethod = "    :methodology: 'This dataset was created at the University of Michigan Museum of Zoology using a procedure involving computed tomography (CT) hardware. After retrieving the specimen from the museum''s archives, staff secured the specimen in the Nikon XT H 225 ST and initiated the scanning process, which included capturing projections by rotating the specimen. The device''s associated software CT-Pro-3D and the projections were then used to reconstruct a set of TIFF images, with each corresponding to a slice of the three-dimensional object (one voxel in height). In addition, the software created a .xtek volume file (included here), which contains details about the scanning environment, projections, and reconstructions.'\n"
+    ymethod = "    :methodology:\n      - 'This dataset was created at the University of Michigan Museum of Zoology using a procedure involving computed tomography (CT) hardware. After retrieving the specimen from the museum''s archives, staff secured the specimen in the Nikon XT H 225 ST and initiated the scanning process, which included capturing projections by rotating the specimen. The device''s associated software CT-Pro-3D and the projections were then used to reconstruct a set of TIFF images, with each corresponding to a slice of the three-dimensional object (one voxel in height). In addition, the software created a .xtek volume file (included here), which contains details about the scanning environment, projections, and reconstructions.'\n"
     ypartof = "    :part_of:\n      - 'part of'\n"
     ycreator = "    :creator:\n      - 'University of Michigan Museum of Zoology'\n"
     ykw = ("    :keyword:\n      - %s\n      - 'computed tomography'\n      - 'X-ray'\n      - '3D' \n" % ('\n      - '.join("'{0}'".format(w) for w in ummzdict['keyWords'])))
@@ -355,8 +340,8 @@ with open(msFilePath, mode='w', encoding='utf8', newline='') as csv_file:
             #print(ummzdict)
             if ummzdict['ic'] == "error":
                 continue
-            mgName, uf, filepath, rawZsplit, reconZsplit = getmediagroup(ummzpath, fname, ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['yuuid']) # Get media groups zip media group folders
-            desc, msMetadata, roiName  = xtekdata(mgName, rawZsplit, reconZsplit) # Get values from xtekVolume
+            mgName, uf, filepath = getmediagroup(ummzpath, fname, ummzdict['ic'], ummzdict['cc'], ummzdict['cn'], ummzdict['yuuid']) # Get media groups zip media group folders
+            desc, msMetadata, roiName  = xtekdata(mgName) # Get values from xtekVolume
             #create file with MorphoSource metadata for each work
 
             writer.writerows(msMetadata)

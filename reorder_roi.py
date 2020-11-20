@@ -7,7 +7,7 @@
 # zip folders by skull or whole body
 # create *.yml in parent folder created in line #2
 
-
+from sys import argv
 import os.path
 import pathlib
 import shutil
@@ -18,7 +18,9 @@ from re import search
 import datetime
 from os import walk
 
-dirs = [d for d in os.listdir('UMMZ-ms') if os.path.isdir(os.path.join('UMMZ-ms', d))]
+ummzpath = argv[1] #For example UMMZ-02-22-219
+
+dirs = [d for d in os.listdir(ummzpath) if os.path.isdir(os.path.join(ummzpath, d))]
 #dirs = list
 #print(dirs)
 
@@ -35,12 +37,12 @@ for specDir in dirs:
     #print(umztripledir)
     if "skull" in specDir:
         clipSkull = umztripledir.split('_skull')[0]
-        os.mkdir('UMMZ-ms/' + specDir + '/' + "Raw-Skull-" + clipSkull)
-        rawTarDir = 'UMMZ-ms/' + specDir + '/' + "Raw-Skull-" + clipSkull
+        os.mkdir(ummzpath + specDir + '/' + "Raw-Skull-" + clipSkull)
+        rawTarDir = ummzpath + specDir + '/' + "Raw-Skull-" + clipSkull
     else:
-        os.mkdir('UMMZ-ms/' + specDir + '/' + "Raw-WholeBody-" + umztripledir)
-        rawTarDir = 'UMMZ-ms/' + specDir + '/' + "Raw-WholeBody-" + umztripledir
-    roiDir = 'UMMZ-ms/' + specDir
+        os.mkdir(ummzpath + specDir + '/' + "Raw-WholeBody-" + umztripledir)
+        rawTarDir = ummzpath + specDir + '/' + "Raw-WholeBody-" + umztripledir
+    roiDir = ummzpath + specDir
     #roiAll = os.listdir(roiDir)
     #print(rawTarDir)
     roiSubDirs = [d for d in os.listdir(roiDir) if os.path.isdir(os.path.join(roiDir, d))]
@@ -56,10 +58,10 @@ for specDir in dirs:
                 #print(os.getcwd())
                 #print(dirs)
                 if "skull" in specDir:
-                    reconTargetDir = 'UMMZ-ms/' + specDir + '/' + "Recon-Skull-" + clipSkull
+                    reconTargetDir = ummzpath + specDir + '/' + "Recon-Skull-" + clipSkull
                 else:
-                    reconTargetDir = 'UMMZ-ms/' + specDir + '/' + "Recon-WholeBody-" + umztripledir
-                os.rename('UMMZ-ms/' + specDir + '/' + dirs, reconTargetDir)
+                    reconTargetDir = ummzpath + specDir + '/' + "Recon-WholeBody-" + umztripledir
+                os.rename(ummzpath + specDir + '/' + dirs, reconTargetDir)
             else:
                 shutil.move(roiDir + '/' + dirs, rawTarDir)
-    os.rename('UMMZ-ms/' + specDir, 'UMMZ-ms/' + newSpecDir)
+    os.rename(ummzpath + specDir, ummzpath + newSpecDir)
