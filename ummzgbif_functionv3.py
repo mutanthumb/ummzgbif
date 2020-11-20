@@ -42,7 +42,7 @@ def parsefolder(fn):
         tripleSplit = initSplit[0]
         fsplit = tripleSplit.split("-")
         if len(fsplit) <= 2:
-            print("Missing catalog number, contact Scott Martin")
+            print("Missing catalog number, contact UMMZ")
             return
         else:
             ic = fsplit[0] #institutioncode
