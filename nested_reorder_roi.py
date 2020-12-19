@@ -1,5 +1,5 @@
 
-#> python3 ./scripts/reorder_roi.py ./UMMZ-ms/
+#> nohup python3 nested_reorder_roi.py ../Transfer-12-11-2020/ &
 
 # read list of folders
 # create new parent folder(s) based on folders that exist in specified folder
@@ -81,7 +81,7 @@ for nestDir in topDir:
                         if "_skull " in specDir:
                             reconTargetDir = ummzpath + specDir + '/' + "Recon-Skull-" + clipSkull
                         if "skulldice" in specDir:
-                            reconTargetDir = ummzpath + specDir + '/' + "Recon-Skull-" + clipSkull                        
+                            reconTargetDir = ummzpath + specDir + '/' + "Recon-Skull-" + clipSkull
                     else:
                         reconTargetDir = ummzpath + specDir + '/' + "Recon-WholeBody-" + umztripledir
                     os.rename(ummzpath + specDir + '/' + dirs, reconTargetDir)

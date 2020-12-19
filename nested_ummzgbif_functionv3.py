@@ -1,5 +1,5 @@
 # Z:\UMMZ>python ummzgbif_functionv3.py UMMZ-TEST > log.txt
-
+# nohup python3 nested_ummzgbif_functionv3.py ../Transfer-12-11-2020/ > log_Transfer-12-11-2020.txt &
 '''
 Emails for ummz
 All of UMMZ:
