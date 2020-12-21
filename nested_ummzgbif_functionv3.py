@@ -73,7 +73,7 @@ def getgbif(ic, cc, cn):
     #print(htmltext)
     #key_list = occ.search(institutionCode=ic,collectionCode=cc,catalogNumber=cn)
     if key_list['results'] == []:
-        print("No GBIF record for %s contact Scott Martin" % fname)
+        print("No GBIF record for %s contact UMMZ" % fname)
         ummzdict['ic'] = "error"
         ummzdict['cc'] = "error"
         ummzdict['cn'] = "error"
