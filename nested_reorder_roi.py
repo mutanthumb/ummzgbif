@@ -1,5 +1,5 @@
 
-#> nohup python3 nested_reorder_roi.py ../Transfer-12-11-2020/ &
+#> nohup python3 ./scripts/nested_reorder_roi.py /deepbluedata-globus/upload/UMMZ/Transfer-12-11-2020/  &
 
 # read list of folders
 # create new parent folder(s) based on folders that exist in specified folder
@@ -25,14 +25,15 @@ from os import walk
 
 topDir = [d for d in os.listdir(argv[1]) if os.path.isdir(os.path.join(argv[1], d))]
 #print(type(topDir))
-os.chdir('./' + argv[1] + '/')
+#os.chdir('./' + argv[1] + '/')
+os.chdir(argv[1])
 #print(os.getcwd())
 
 for nestDir in topDir:
-    print(nestDir)
 
-    ummzpath = './' + nestDir +'/'
-    #print(ummzpath)
+    ummzpath = argv[1] + nestDir + '/'
+    print(ummzpath)
+
     dirs = [d for d in os.listdir(ummzpath) if os.path.isdir(os.path.join(ummzpath, d))]
     #dirs = list
     #print(dirs)

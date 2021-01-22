@@ -1,5 +1,5 @@
 # Z:\UMMZ>python ummzgbif_functionv3.py UMMZ-TEST > log.txt
-# nohup python3 nested_ummzgbif_functionv3.py ../Transfer-12-11-2020/ > log_Transfer-12-11-2020.txt &
+# nohup python3 ./scripts/nested_ummzgbif_functionv3.py /deepbluedata-globus/upload/UMMZ/Transfer-12-11-2020/ > ./scripts/nested_log.txt &
 '''
 Emails for ummz
 All of UMMZ:
@@ -127,22 +127,26 @@ def getmediagroup(up, fn, ic, cc, cn, uid):
                 rawZsplit = zsplit
             if "Recon" in zsplit:
                 reconZsplit = zsplit
-            filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s/%s\n" % (up, fn, zsplit))
+            #filepath = filepath + ("      - /deepbluedata-globus/upload/UMMZ/%s/%s/%s\n" % (up, fn, zsplit))
+            filepath = filepath + ("      - %s/%s/%s\n" % (up, fn, zsplit))
 
             #Get tifs and ply files for previews
             plyfile = [f for f in os.listdir(mgfolder) if f.endswith('.ply')]
             if len(plyfile) != 0:
                 uf = uf + ("      - %s\n" % (plyfile[0]))
-                filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, plyfile[0]))
+                #filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, plyfile[0]))
+                filepath = filepath + ("      - %s/%s\n" % (mgfolder, plyfile[0]))
             if "Skull" in folders:
                 img_files = [f for f in os.listdir(mgfolder) if f.endswith('.tif')]
                 uf = uf + ("      - %s\n" % (img_files[0]))
-                filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[0]))
+                #filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[0]))
+                filepath = filepath + ("      - %s/%s\n" % (mgfolder, img_files[0]))
             if "WholeBody" in folders:
                 img_files = [f for f in os.listdir(mgfolder) if f.endswith('.tif')]
                 fbimg = int(len(img_files)/2)
                 uf = uf + ("      - %s\n" % (img_files[fbimg]))
-                filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[fbimg]))
+                #filepath = filepath + ("      - /deepbluedata-prep/UMMZ/%s/%s\n" % (mgfolder, img_files[fbimg]))
+                filepath = filepath + ("      - %s/%s\n" % (mgfolder, img_files[fbimg]))
 
     return mgName, uf, filepath, rawZsplit, reconZsplit
 
@@ -327,22 +331,22 @@ def createyml(fname, uf, filepath, gbifl1, roiName):
 
 
 ### Start here!!
-#ummzpath = input("UMMZ folder path: ")
-#ummzpath = argv[1] #For example UMMZ-02-22-219
-#print(ummzpath)
+
 #get folder name from the system to parse into query fields
-#print(os.getcwd())
+#python3 ./scripts/nested_ummzgbif_functionv3.py /deepbluedata-globus/upload/UMMZ/Transfer-12-11-2020/ > ./scripts/nested_log.txt
 
 topDir = [d for d in os.listdir(argv[1]) if os.path.isdir(os.path.join(argv[1], d))]
 #print(type(topDir))
-os.chdir('./' + argv[1] + '/')
+#os.chdir('./' + argv[1] + '/')
+os.chdir(argv[1])
 #print(os.getcwd())
 
 for nestDir in topDir:
     #print(nestDir)
 
-    ummzpath = './' + nestDir +'/'
-    #print(ummzpath)
+    #ummzpath = './' + nestDir +'/'
+    ummzpath = argv[1] + nestDir
+    print(ummzpath)
 
     folderName = [dI for dI in os.listdir(ummzpath) if os.path.isdir(os.path.join(ummzpath,dI))]
     print(folderName)
