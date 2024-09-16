@@ -5,6 +5,7 @@ reportMerge.py merges reports with the GBIF and scan metadata with the DBD files
 to send to MorphoSource.
 
 Presentation from IDCC2020: https://zenodo.org/record/3667733#.Xl6huUN7laQ
+General article on IJDC: https://ijdc.net/index.php/ijdc/article/view/700
 
 ![Basic Workflow](https://github.com/mutanthumb/ummzgbif/blob/master/UMMZworkflow-Page-4.png)
 
